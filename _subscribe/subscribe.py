@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # Email sign-up for kerryhodgkins.com: subscribe.kerryhodgkins.com.
 # Someone enters an email, gets a one-time confirm link, and only after they click it is the address added to a Resend
-# audience. Kerry sends the monthly update from Resend (Broadcasts), which adds the unsubscribe link and handles opt-outs.
+# segment. Kerry sends the monthly update from Resend (Broadcasts, to the segment), which adds the unsubscribe link and handles opt-outs.
 #
 # Privacy: unconfirmed addresses are kept (as a hash of the token, with the email) for 48 hours, then dropped. Confirmed
-# addresses live only in the Resend audience. No cookies, no analytics, no scripts on the pages. Logs never hold emails.
+# addresses live only in Resend (as contacts in the segment). No cookies, no analytics, no scripts on the pages. Logs never hold emails.
 #
 # Runs on 127.0.0.1 behind nginx. Settings come from the environment (systemd EnvironmentFile=/etc/kh-subscribe.env):
 #   RESEND_API_KEY   a Resend key that can send email and manage contacts (never commit it, never paste it in chat)
-#   RESEND_AUDIENCE  the audience id ("kerryhodgkins.com")
+#   RESEND_SEGMENT   the segment id ("kerryhodgkins.com") new subscribers go into (Resend replaced audiences with segments)
 #   KH_FROM          sender, e.g. "Kerry Hodgkins <hello@kerryhodgkins.com>" (its domain must be verified in Resend)
 #   KH_PUBLIC        the public address of this service, default https://subscribe.kerryhodgkins.com
 #   KH_PORT          default 8097;  KH_STATE  default /var/lib/kh-subscribe;  RESEND_API  default https://api.resend.com
@@ -18,7 +18,7 @@ from urllib.parse import parse_qs, urlsplit
 
 API = os.environ.get('RESEND_API', 'https://api.resend.com').rstrip('/')
 KEY = os.environ.get('RESEND_API_KEY', '')
-AUDIENCE = os.environ.get('RESEND_AUDIENCE', '')
+SEGMENT = os.environ.get('RESEND_SEGMENT') or os.environ.get('RESEND_AUDIENCE', '')
 FROM = os.environ.get('KH_FROM', 'Kerry Hodgkins <hello@kerryhodgkins.com>')
 PUBLIC = os.environ.get('KH_PUBLIC', 'https://subscribe.kerryhodgkins.com').rstrip('/')
 PORT = int(os.environ.get('KH_PORT', '8097'))
@@ -118,8 +118,10 @@ def send_confirm(email, tok):
 
 
 def add_contact(email):
-    code, _ = resend('POST', f'/audiences/{AUDIENCE}/contacts', {'email': email, 'unsubscribed': False})
-    return 200 <= code < 300
+    """Contacts are global in Resend; the segment is the list Kerry broadcasts to. Someone already a contact (say,
+    signing up again after unsubscribing) counts as done: Resend's own unsubscribe state stays theirs to change."""
+    code, body = resend('POST', '/contacts', {'email': email, 'unsubscribed': False, 'segments': [{'id': SEGMENT}]})
+    return 200 <= code < 300 or (code in (409, 422) and 'exist' in json.dumps(body).lower())
 
 
 def page(title, body, status=''):
@@ -214,7 +216,7 @@ class H(BaseHTTPRequestHandler):
 
 
 if __name__ == '__main__':
-    if not (KEY and AUDIENCE): raise SystemExit('kh-subscribe: set RESEND_API_KEY and RESEND_AUDIENCE (see /etc/kh-subscribe.env)')
+    if not (KEY and SEGMENT): raise SystemExit('kh-subscribe: set RESEND_API_KEY and RESEND_SEGMENT (see /etc/kh-subscribe.env)')
     os.makedirs(STATE, exist_ok=True); os.umask(0o077)
     srv = ThreadingHTTPServer(('127.0.0.1', PORT), H); srv.daemon_threads = True
     print(f'kh-subscribe on 127.0.0.1:{PORT}', flush=True)
