@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+  <title>Kerry Hodgkins: new projects</title>
+  <link>https://kerryhodgkins.com/</link>
+  <atom:link href="https://kerryhodgkins.com/feed.xml" rel="self" type="application/rss+xml"/>
+  <description>New projects and launches. No ads, no trackers. Ever.</description>
+  <language>en-us</language>
+  <item>
+    <title>Sleepless Node Season 0 alpha is live</title>
+    <link>https://sleeplessnode.com/</link>
+    <guid isPermaLink="false">kh-2026-10-27-sleepless-node-alpha</guid>
+    <pubDate>Tue, 27 Oct 2026 19:00:00 -0500</pubDate>
+    <description>A slow-burn horror story told on a fake 1993 BBS. Season 0, "Wrong Number," opens one day at a time through Halloween.</description>
+  </item>
+  <item>
+    <title>kerryhodgkins.com is up</title>
+    <link>https://kerryhodgkins.com/</link>
+    <guid isPermaLink="false">kh-2026-10-27-site-launch</guid>
+    <pubDate>Tue, 27 Oct 2026 12:00:00 -0500</pubDate>
+    <description>Everything I build, in one place: games, bulletin boards, and community platforms. No ads, no trackers. Ever.</description>
+  </item>
+</channel>
+</rss>

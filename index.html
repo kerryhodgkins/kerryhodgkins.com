@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kerry Hodgkins | Things I build</title>
+<link rel="alternate" type="application/rss+xml" title="Kerry Hodgkins: new projects" href="/feed.xml">
+<meta name="description" content="Kerry Hodgkins builds software that respects the people using it: games, bulletin boards and community platforms. No ads, no trackers, ever.">
+<meta property="og:title" content="Kerry Hodgkins">
+<meta property="og:description" content="Software that respects the people using it. No ads, no trackers, ever.">
+<meta property="og:url" content="https://kerryhodgkins.com/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Libre+Franklin:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFFFFF; --band:#F5F7F9; --ink:#0B1E33; --text:#16202B; --muted:#4B5C6B; --rule:#E2E7EC;
+  --accent:#2F6694; --live:#1F7A4D; --wip:#9A6200; --plan:#6B7A88; --grid:rgba(11,30,51,.045);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0E1722; --band:#13202E; --ink:#E9EEF3; --text:#D5DDE5; --muted:#9AAAB8; --rule:#22313F;
+         --accent:#7FB0DC; --live:#5CC08C; --wip:#E0A84A; --plan:#93A3B1; --grid:rgba(233,238,243,.04); }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--text);font:400 1rem/1.6 Inter,system-ui,sans-serif}
+h1,h2,h3{font-family:"Libre Franklin",Inter,system-ui,sans-serif;color:var(--ink);margin:0}
+a{color:var(--accent);text-underline-offset:.18em}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:3px}
+.skip{position:absolute;left:-999px}.skip:focus{left:1rem;top:1rem;background:var(--ink);color:var(--bg);padding:.5rem .75rem;z-index:9}
+.wrap{max-width:68rem;margin:0 auto;padding:0 1.25rem}
+
+nav{border-bottom:1px solid var(--rule);background:var(--bg)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;gap:1rem;height:4rem}
+.mark{font:800 1.15rem "Libre Franklin",sans-serif;color:var(--ink);text-decoration:none}
+nav ul{display:flex;gap:1.5rem;list-style:none;margin:0;padding:0}
+nav ul a{color:var(--muted);text-decoration:none;font-size:.95rem}
+nav ul a:hover{color:var(--ink)}
+@media (max-width:640px){nav ul{display:none}}
+
+.hero{background:var(--band);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:32px 32px;border-bottom:1px solid var(--rule)}
+.hero .wrap{padding-top:4.5rem;padding-bottom:4.5rem}
+.hero h1{font-size:clamp(2.4rem,6vw,3.6rem);font-weight:800;line-height:1.05;letter-spacing:-.015em;max-width:15ch}
+.hero .never{font:800 clamp(1.4rem,3.2vw,2rem)/1.1 "Libre Franklin",sans-serif;color:var(--accent);letter-spacing:-.01em;margin:1rem 0 0;max-width:none}
+.hero p{font-size:1.15rem;color:var(--muted);max-width:56ch;margin:1.25rem 0 0}
+.hero .rule{margin-top:1.75rem;padding-left:.9rem;border-left:3px solid var(--accent);color:var(--ink);font-weight:500;max-width:52ch}
+
+section{padding:4rem 0;border-bottom:1px solid var(--rule)}
+section.alt{background:var(--band)}
+.head{max-width:60ch;margin-bottom:2rem}
+.head h2{font-size:clamp(1.6rem,3.5vw,2rem);font-weight:700;line-height:1.15}
+.head p{color:var(--muted);margin:.6rem 0 0}
+
+/* principles */
+.princ{display:grid;grid-template-columns:repeat(auto-fit,minmax(13rem,1fr));gap:1.75rem 2.5rem;list-style:none;margin:0;padding:0}
+.princ h3{font-size:1.1rem;font-weight:700;margin-bottom:.3rem}
+.princ p{margin:0;color:var(--muted)}
+
+/* projects */
+.cat{margin-top:2.75rem}
+.cat:first-of-type{margin-top:0}
+.cat>h3{font-size:1.25rem;font-weight:800;padding-bottom:.6rem;border-bottom:2px solid var(--ink);margin-bottom:0}
+.cat>p.blurb{color:var(--muted);margin:.6rem 0 0;max-width:62ch}
+.rows{list-style:none;margin:0;padding:0}
+.rows li{display:grid;grid-template-columns:1fr auto;gap:.35rem 1.5rem;padding:1.4rem 0;border-bottom:1px solid var(--rule)}
+.rows h4{font:700 1.15rem "Libre Franklin",sans-serif;color:var(--ink);margin:0}
+.rows h4 a{color:inherit;text-decoration:none}
+.rows h4 a:hover{text-decoration:underline}
+.rows .what{color:var(--muted);font-size:.9rem;margin:0}
+.rows .desc{grid-column:1;margin:.15rem 0 0;max-width:62ch}
+.rows .tags{grid-column:1;display:flex;flex-wrap:wrap;gap:.4rem;margin:.55rem 0 0;padding:0;list-style:none}
+.rows .tags li{all:unset;font:500 .75rem/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);border:1px solid var(--rule);border-radius:4px;padding:.35rem .5rem;background:var(--bg)}
+.status{grid-column:2;grid-row:1;align-self:start;justify-self:end;font-size:.8rem;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:.45rem;color:var(--muted)}
+.status::before{content:"";width:.55rem;height:.55rem;border-radius:50%;background:currentColor}
+.status.live{color:var(--live)} .status.wip{color:var(--wip)} .status.plan{color:var(--plan)}
+@media (max-width:560px){ .rows li{grid-template-columns:1fr} .status{grid-column:1;grid-row:auto;justify-self:start;margin-top:.4rem} }
+
+/* bench */
+.bench{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:1rem;list-style:none;margin:0;padding:0}
+.bench li{background:var(--bg);border:1px solid var(--rule);border-radius:6px;padding:1.25rem 1.25rem 1.1rem}
+.bench .cattag{font-size:.8rem;color:var(--accent);font-weight:600;margin:0 0 .35rem}
+.bench h3{font-size:1.05rem;font-weight:700;margin-bottom:.3rem}
+.bench p{margin:0;color:var(--muted);font-size:.95rem}
+.bench .next{margin-top:.7rem;font-size:.85rem;color:var(--text)}
+
+/* footer */
+footer{background:#0B1E33;color:rgba(255,255,255,.85)}
+footer .wrap{padding-top:3.5rem;padding-bottom:3rem}
+footer h2{color:#fff;font-size:1.5rem;font-weight:700}
+footer p{margin:.5rem 0 0;max-width:52ch}
+footer a{color:#fff}
+a.rss{display:inline-block;margin-top:.5rem;font:600 1rem Inter,sans-serif;padding:.7rem 1.15rem;border-radius:4px;background:#fff;color:#0B1E33;text-decoration:none}
+a.rss:hover{background:#DCE8F3}
+.foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem 2rem;margin-top:3rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,.15);font-size:.9rem}
+.foot ul{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;list-style:none;margin:0;padding:0}
+.day{font-weight:600}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<nav aria-label="Main">
+  <div class="wrap">
+    <a class="mark" href="/">Kerry Hodgkins</a>
+    <ul>
+      <li><a href="#principles">How I build</a></li>
+      <li><a href="#built">Things I've built</a></li>
+      <li><a href="#bench">On the bench</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main id="main">
+<header class="hero">
+  <div class="wrap">
+    <h1>I build software that respects the people using it.</h1>
+    <p class="never">No ads. No trackers. Ever.</p>
+    <p>Games, bulletin boards, and community platforms for hobbyists, small communities, and the businesses that want the same standard.</p>
+    <p class="rule">Private by default and secure from the first line, whether it's a poker night or a company's internal network.</p>
+  </div>
+</header>
+
+<section id="principles" aria-labelledby="p-h">
+  <div class="wrap">
+    <div class="head">
+      <h2 id="p-h">How I build</h2>
+      <p>Every project on this page holds to these. If a feature needs your real name, your location or a tracker to work, it doesn't ship.</p>
+    </div>
+    <ul class="princ">
+      <li><h3>No ads. Ever.</h3><p>No ad networks, no sponsored spots, no selling your attention. No analytics SDKs or telemetry either, including on this page.</p></li>
+      <li><h3>Collect the minimum</h3><p>Handles, not names. No addresses, no phone numbers. If I don't need it, I don't ask for it.</p></li>
+      <li><h3>Secure from the first line</h3><p>Hashed passwords, keys instead of shared secrets, least privilege. Security goes in at the start, not bolted on after launch.</p></li>
+      <li><h3>Yours to keep</h3><p>You can leave with your data, delete your account by asking, and use the free version without being nagged into a paid one.</p></li>
+    </ul>
+  </div>
+</section>
+
+<section id="built" class="alt" aria-labelledby="b-h">
+  <div class="wrap">
+    <div class="head">
+      <h2 id="b-h">Things I've built</h2>
+      <p>Most of these are for the hours that are yours. Grouped by what they're for; the green dot means it's running today and you can use it.</p>
+    </div>
+
+    <div class="cat">
+      <h3>Play</h3>
+      <p class="blurb">Games and add-ons, for players who still read the patch notes.</p>
+      <ul class="rows">
+        <li>
+          <h4><a href="https://poker.nodedial.com/">Revenant Poker</a></h4>
+          <span class="status live">Live</span>
+          <p class="what">Real-time multiplayer poker door for BBSes</p>
+          <p class="desc">No-Limit Hold'em and Pot-Limit Omaha at live tables shared across boards: a caller on Revenant and a caller on Haunted Node sit at the same felt. A hosted hub shuffles with a cryptographically secure deck and decides every hand, so a modified door can't change the outcome. Clean 80x25 ANSI with a four-color deck, hand strength, bet presets and a weekly leaderboard. Press K on Revenant.</p>
+          <ul class="tags"><li>No ads</li><li>Play chips only</li><li>No cash value</li><li>Hub decides every hand</li></ul>
+        </li>
+        <li>
+          <h4><a href="https://sleeplessnode.com/">Sleepless Node</a></h4>
+          <span class="status live">Alpha &middot; Live</span>
+          <p class="what">A slow-burn horror story told on a fake 1993 BBS</p>
+          <p class="desc">Dial in from the browser, modem sounds and all, and something new has happened since yesterday. The story unfolds one day at a time through the board itself: posts, private mail, one-liners, the dialer, a SysOp who breaks into chat. Lurkers get the whole story just by reading; players who take part earn extra lore, titles and one of several endings. Built on my own BBS engine, with day-gating so nobody can spoil it. Season 0, "Wrong Number," runs through Halloween.</p>
+          <ul class="tags"><li>No ads</li><li>No personal data</li><li>Free</li><li>18+ fiction</li></ul>
+        </li>
+        <li>
+          <h4><a href="https://www.curseforge.com/wow/addons/foreverartisan">ForeverArtisan</a></h4>
+          <span class="status live">Beta &middot; Live</span>
+          <p class="what">WoW Forever addon on CurseForge</p>
+          <p class="desc">A tradeskill suite: all twelve professions in one addon, plus a few features beyond them. More than 8,300 downloads during the beta alone, ahead of the game's November 4 launch.</p>
+          <ul class="tags"><li>12 professions</li><li>8,300+ beta downloads</li><li>Free</li></ul>
+          <p class="desc"><a href="https://buymeacoffee.com/foreverartisan">Support ForeverArtisan</a></p>
+        </li>
+      </ul>
+    </div>
+
+    <div class="cat">
+      <h3>Hang out</h3>
+      <p class="blurb">Bulletin boards and the chat that links them. Places people choose to show up.</p>
+      <ul class="rows">
+        <li>
+          <h4><a href="https://revenantbbs.com/">Revenant BBS</a></h4>
+          <span class="status live">Live</span>
+          <p class="what">Mystic bulletin board</p>
+          <p class="desc">A horror-themed board in toxic green. Message bases, door games, live chat, and a gate that decides who gets in. Telnet revenantbbs.com, SSH on port 2222, or dial in from the browser.</p>
+          <ul class="tags"><li>No ads</li><li>Handles only</li><li>No real names</li><li>PBKDF2 passwords</li></ul>
+        </li>
+        <li>
+          <h4><a href="https://hauntednode.com/">Haunted Node</a></h4>
+          <span class="status live">Live</span>
+          <p class="what">Synchronet bulletin board</p>
+          <p class="desc">Revenant's sister board, on the DOVE-Net message network, with a haunted-mansion theme.</p>
+          <ul class="tags"><li>No ads</li><li>Handles only</li><li>DOVE-Net</li></ul>
+        </li>
+        <li>
+          <h4>NodeDial Relay</h4>
+          <span class="status live">Live</span>
+          <p class="what">Discord chat inside any BBS door</p>
+          <p class="desc">Callers on a board and people on Discord talk in the same room. Nothing like it existed, so I wrote it. Running on Revenant and Haunted Node.</p>
+          <ul class="tags"><li>Server owners opt in</li><li>Deletions honored</li><li>Per-board keys</li></ul>
+        </li>
+      </ul>
+    </div>
+
+    <div class="cat">
+      <h3>Hobbies</h3>
+      <p class="blurb">Offline-first Android apps for the things you love: no account, nothing leaves your device, one-time purchase.</p>
+      <ul class="rows">
+        <li>
+          <h4>Cigar Diary</h4>
+          <span class="status wip">In development</span>
+          <p class="what">Private tasting journal, coming to Google Play</p>
+          <p class="desc">Log flavor notes, ratings, prices and humidor stock, with photos, in an encrypted database on your phone.</p>
+          <ul class="tags"><li>No ads</li><li>No account</li><li>No cloud</li><li>Encrypted</li><li>One-time purchase</li></ul>
+        </li>
+      </ul>
+    </div>
+
+    <div class="cat">
+      <h3>Connect</h3>
+      <p class="blurb">Getting people to the boards: from a browser today, from a real phone line soon.</p>
+      <ul class="rows">
+        <li>
+          <h4><a href="https://nodedial.com/">NodeDial</a></h4>
+          <span class="status wip">Rebuilding</span>
+          <p class="what">BBS directory and web dialer</p>
+          <p class="desc">Started as a browser dialer for BBSes. Becoming a curated directory of boards that are actually online, checked a few times a day, with the dialer released as open source.</p>
+          <ul class="tags"><li>No ads</li><li>No paid placement</li><li>Open-source dialer</li></ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="bench" aria-labelledby="w-h">
+  <div class="wrap">
+    <div class="head">
+      <h2 id="w-h">On the bench</h2>
+      <p>Not live yet. These get a spot above when they ship.</p>
+    </div>
+    <ul class="bench">
+      <li><p class="cattag">Connect</p><h3>Real dial-up lines</h3><p>Phone numbers for both boards over VoIP, answered by a USRobotics Courier. At least 14.4k, or it doesn't count.</p><p class="next">Waiting on: the modem</p></li>
+      <li><p class="cattag">Connect</p><h3>Softmodem app</h3><p>An Android app that dials real dial-up BBSes over SIP. Your phone becomes the modem.</p><p class="next">Stage: testing with a sysop</p></li>
+      <li><p class="cattag">Hang out</p><h3>BurbNet</h3><p>A BBS message network for the security community, with BurbSec as the first hub.</p><p class="next">Stage: planning</p></li>
+      
+    </ul>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <h2>Follow along</h2>
+    <p>New projects and launches go in the RSS feed. No email list, no tracking, nothing to unsubscribe from.</p>
+    <p><a class="rss" href="/feed.xml">Subscribe via RSS</a></p>
+    <div class="foot">
+      <ul>
+        <li><a href="https://ko-fi.com/kerryhodgkins">Ko-fi</a></li>
+      </ul>
+      <p class="day" style="margin:0">Day job: <a href="https://styzza.com/">Styzza Security &amp; Privacy</a></p>
+    </div>
+    <p style="font-size:.85rem;color:rgba(255,255,255,.6);margin-top:1.25rem">© 2026 Kerry Hodgkins. No ads, no trackers. Ever.</p>
+  </div>
+</footer>
+</body>
+</html>
