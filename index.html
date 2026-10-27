@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kerry Hodgkins | Things I build</title>
 <link rel="alternate" type="application/rss+xml" title="Kerry Hodgkins: new projects" href="/feed.xml">
-<meta name="description" content="Kerry Hodgkins builds software that respects the people using it: games, bulletin boards and community platforms. No ads, no trackers, ever.">
+<meta name="description" content="Kerry Hodgkins builds software that minds its own business: games, bulletin boards and community platforms. No ads, no trackers, ever.">
 <meta property="og:title" content="Kerry Hodgkins">
-<meta property="og:description" content="Software that respects the people using it. No ads, no trackers, ever.">
+<meta property="og:description" content="Software that minds its own business. No ads, no trackers, ever.">
 <meta property="og:url" content="https://kerryhodgkins.com/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -42,6 +42,11 @@ nav ul a:hover{color:var(--ink)}
 .hero{background:var(--band);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:32px 32px;border-bottom:1px solid var(--rule)}
 .hero .wrap{padding-top:4.5rem;padding-bottom:4.5rem}
 .hero h1{font-size:clamp(2.4rem,6vw,3.6rem);font-weight:800;line-height:1.05;letter-spacing:-.015em;max-width:15ch}
+/* redacted words that declassify one by one (same effect as styzza.com; pure CSS) */
+.redact{position:relative;display:inline-block;overflow:hidden}
+.redact::after{content:"";position:absolute;inset:0;background:var(--ink);transform-origin:left center;animation:declassify .7s cubic-bezier(.77,0,.18,1) var(--d,0s) forwards}
+@keyframes declassify{0%,45%{transform:scaleX(1)}100%{transform:scaleX(0)}}
+@media (prefers-reduced-motion:reduce){.redact::after{animation:none;transform:scaleX(0)}}
 .hero .never{font:800 clamp(1.4rem,3.2vw,2rem)/1.1 "Libre Franklin",sans-serif;color:var(--accent);letter-spacing:-.01em;margin:1rem 0 0;max-width:none}
 .hero p{font-size:1.15rem;color:var(--muted);max-width:56ch;margin:1.25rem 0 0}
 .hero .rule{margin-top:1.75rem;padding-left:.9rem;border-left:3px solid var(--accent);color:var(--ink);font-weight:500;max-width:52ch}
@@ -119,7 +124,7 @@ a.rss:hover{background:#DCE8F3}
 <main id="main">
 <header class="hero">
   <div class="wrap">
-    <h1>I build software that respects the people using it.</h1>
+    <h1><span class="redact" style="--d:.1s">Software</span> <span class="redact" style="--d:.22s">that</span> <span class="redact" style="--d:.34s">minds</span> <span class="redact" style="--d:.46s">its</span> <span class="redact" style="--d:.58s">own</span> <span class="redact" style="--d:.7s">business.</span></h1>
     <p class="never">No ads. No trackers. Ever.</p>
     <p>Games, bulletin boards, and community platforms for hobbyists, small communities, and the businesses that want the same standard.</p>
     <p class="rule">Private by default and secure from the first line, whether it's a poker night or a company's internal network.</p>
