@@ -20,5 +20,12 @@
     <pubDate>Tue, 27 Oct 2026 12:00:00 -0500</pubDate>
     <description>Everything I build, in one place: games, bulletin boards, and community platforms. No ads, no trackers. Ever.</description>
   </item>
+  <item>
+    <title>NodeDial is now the BBS list</title>
+    <link>https://nodedial.com/</link>
+    <guid isPermaLink="false">kh-2026-10-27-nodedial-bbs-list</guid>
+    <pubDate>Tue, 27 Oct 2026 08:30:00 -0500</pubDate>
+    <description>A free list of BBSes you can call today, each one checked about five times a day. No ads, no paid placement, and a daily order anyone can check. Sysops can add or claim their board for free.</description>
+  </item>
 </channel>
 </rss>
