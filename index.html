@@ -76,6 +76,12 @@ section.alt{background:var(--band)}
 .status.live{color:var(--live)} .status.wip{color:var(--wip)} .status.plan{color:var(--plan)}
 @media (max-width:560px){ .rows li{grid-template-columns:1fr} .status{grid-column:1;grid-row:auto;justify-self:start;margin-top:.4rem} }
 
+.rows details{grid-column:1;margin:.75rem 0 0;max-width:62ch}
+.rows summary{cursor:pointer;font-weight:600;color:var(--accent);font-size:.95rem}
+.rows details h5{font:700 .95rem "Libre Franklin",sans-serif;color:var(--ink);margin:1.1rem 0 .25rem}
+.rows details p{margin:0 0 .5rem}
+.rows details .close{font-style:italic;color:var(--muted)}
+
 /* bench */
 .bench{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:1rem;list-style:none;margin:0;padding:0}
 .bench li{background:var(--bg);border:1px solid var(--rule);border-radius:6px;padding:1.25rem 1.25rem 1.1rem}
@@ -152,6 +158,21 @@ a.rss:hover{background:#DCE8F3}
           <p class="what">Real-time multiplayer poker door for BBSes</p>
           <p class="desc">No-Limit Hold'em and Pot-Limit Omaha at live tables shared across boards: a caller on Revenant and a caller on Haunted Node sit at the same felt. A hosted hub shuffles with a cryptographically secure deck and decides every hand, so a modified door can't change the outcome. Clean 80x25 ANSI with a four-color deck, hand strength, bet presets and a weekly leaderboard. Press K on Revenant.</p>
           <ul class="tags"><li>No ads</li><li>Play chips only</li><li>No cash value</li><li>Hub decides every hand</li></ul>
+          <details>
+            <summary>How the cards are dealt</summary>
+            <h5>The shuffle</h5>
+            <p>Every hand starts with a fresh 52-card deck, shuffled on the hub before the first card goes out. The shuffle is Fisher-Yates, which gives every possible order of the deck the same chance. Each step draws from the server's cryptographic random number generator, the same source used to make encryption keys. Nothing about the players, the table or the time goes into it, so the next card can't be predicted.</p>
+            <p>The deal works like a real table: cards come off the top in order, with a card burned before the flop, the turn and the river.</p>
+            <h5>Who sees what</h5>
+            <p>The deck never leaves the hub. Your door is sent your own cards and the board, and nothing else. You see another player's cards only when they're shown at showdown. A modified door can't peek, because the cards it would need are never sent to it.</p>
+            <p>The sysop panel shows players, tables and bankrolls, never cards. A board only receives its own callers' cards, the ones already on their screens, so no sysop can see the deck or the cards of anyone calling from another board.</p>
+            <p>House bots play by the same rules. A bot gets its own two cards and the board, works out its odds against random hands, and acts. It never sees your cards or the deck, and it's always labeled "bot" at the table.</p>
+            <h5>Hand records</h5>
+            <p>The hub saves the deck order and every action of every hand, so any hand can be replayed card by card. If a hand looks wrong, ask your sysop to send it our way. There is no setting, admin command or door option that picks, holds or changes a card.</p>
+            <p class="close">It's a play-money game, built as if it weren't, because a game is only fun when you know it's straight.</p>
+            <h5>Sysops</h5>
+            <p>Running a BBS? Ask about getting the door at <a href="https://poker.nodedial.com/">poker.nodedial.com</a>. It works on Mystic, Synchronet and other modern boards.</p>
+          </details>
         </li>
         <li>
           <h4><a href="https://sleeplessnode.com/">Sleepless Node</a></h4>
