@@ -4,7 +4,7 @@ Static site. No build step, no trackers.
 
 ## Open items
 - After Nov 1: update the Sleepless Node card (Season 0 ends on Halloween). After Nov 4: ForeverArtisan moves from Beta to launched.
-- New project or launch: add an <item> at the top of feed.xml.
+- New project or launch: add an <item> to feed.xml (newest first).
 
 ## Publish on GitHub Pages
 1. New public repo, e.g. `kerryhodgkins/kerryhodgkins.com`; add `index.html`, `feed.xml` and `CNAME`.
