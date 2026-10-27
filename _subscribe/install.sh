@@ -1,6 +1,6 @@
 #!/bin/bash
 # Installs the kerryhodgkins.com email sign-up on this server (Ubuntu/Debian with nginx and certbot).
-#   sudo ./install.sh            first time: asks for the Resend key and audience id, sets up nginx, HTTPS and the service
+#   sudo ./install.sh            first time: asks for the Resend key and segment id, sets up nginx, HTTPS and the service
 #   sudo ./install.sh update     after a change: copies the new subscribe.py and restarts
 # Before the first run: point subscribe.kerryhodgkins.com at this server (DNS A record), and verify kerryhodgkins.com
 # in Resend (Domains) so it can send from hello@kerryhodgkins.com.
@@ -20,9 +20,9 @@ if [ "${1:-}" = update ]; then systemctl restart kh-subscribe; echo "Updated and
 # 1. settings (the key is typed here, never shown, stored readable by root only)
 if [ ! -f "$ENV" ]; then
   read -rsp "Resend API key (input hidden): " KEY; echo
-  read -rp "Resend audience id (from Audiences > kerryhodgkins.com): " AUD
+  read -rp "Resend segment id (Contacts > Segments > kerryhodgkins.com): " SEG
   read -rp "Send from [Kerry Hodgkins <hello@kerryhodgkins.com>]: " FROM; FROM=${FROM:-Kerry Hodgkins <hello@kerryhodgkins.com>}
-  umask 077; printf 'RESEND_API_KEY=%s\nRESEND_AUDIENCE=%s\nKH_FROM=%s\nKH_PUBLIC=https://%s\n' "$KEY" "$AUD" "$FROM" "$HOST" > "$ENV"
+  umask 077; printf 'RESEND_API_KEY=%s\nRESEND_SEGMENT=%s\nKH_FROM=%s\nKH_PUBLIC=https://%s\n' "$KEY" "$SEG" "$FROM" "$HOST" > "$ENV"
   chmod 600 "$ENV"; unset KEY; echo "Saved $ENV"
 fi
 

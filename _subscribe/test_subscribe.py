@@ -12,7 +12,7 @@ class Fake(BaseHTTPRequestHandler):
     def do_POST(self):
         body = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
         calls.append((self.path, self.headers.get('Authorization'), body))
-        fail = self.path.startswith('/audiences/') and body.get('email', '').startswith('fail')
+        fail = self.path == '/contacts' and body.get('email', '').startswith('fail')
         self.send_response(500 if fail else 200); self.send_header('Content-Type', 'application/json'); self.end_headers()
         self.wfile.write(b'{"id":"x"}')
 
@@ -23,7 +23,7 @@ def free():
 
 api = ThreadingHTTPServer(('127.0.0.1', free()), Fake); threading.Thread(target=api.serve_forever, daemon=True).start()
 port = free(); state = tempfile.mkdtemp()
-env = dict(os.environ, RESEND_API=f'http://127.0.0.1:{api.server_port}', RESEND_API_KEY='re_test', RESEND_AUDIENCE='aud123',
+env = dict(os.environ, RESEND_API=f'http://127.0.0.1:{api.server_port}', RESEND_API_KEY='re_test', RESEND_SEGMENT='seg123',
            KH_PORT=str(port), KH_STATE=state, KH_PUBLIC='https://subscribe.example', NO_PROXY='*', no_proxy='*')
 proc = subprocess.Popen([sys.executable, os.path.join(HERE, 'subscribe.py')], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 base = f'http://127.0.0.1:{port}'
@@ -69,14 +69,14 @@ try:
        and calls[0][2]['to'] == ['reader@example.com'] and 'kerryhodgkins.com' in calls[0][2]['from'], calls)
     link = re.search(r'https://subscribe\.example/confirm\?t=([A-Za-z0-9_-]{43})', calls[0][2]['text'])
     ok('...with a one-time confirm link', link, calls[0][2]['text'])
-    ok('nobody is added before confirming', not any(c[0].startswith('/audiences') for c in calls))
+    ok('nobody is added before confirming', not any(c[0] == '/contacts' for c in calls))
     pend = open(os.path.join(state, 'pending.json')).read()
     ok('the pending file stores a hash of the link, not the link', link.group(1) not in pend)
     s, b, _ = get('/confirm?t=' + link.group(1))
-    ok('opening the link alone adds nothing (a mail scanner can\'t confirm)', s == 200 and 'Confirm' in b and not any(c[0].startswith('/audiences') for c in calls))
+    ok('opening the link alone adds nothing (a mail scanner can\'t confirm)', s == 200 and 'Confirm' in b and not any(c[0] == '/contacts' for c in calls))
     s, b = post('/confirm', {'t': link.group(1)})
-    ok('confirming adds the address to the audience', s == 200 and 're in</h1>' in b and calls[-1][0] == '/audiences/aud123/contacts'
-       and calls[-1][2] == {'email': 'reader@example.com', 'unsubscribed': False}, calls[-1])
+    ok('confirming adds the address to the segment', s == 200 and 're in</h1>' in b and calls[-1][0] == '/contacts'
+       and calls[-1][2] == {'email': 'reader@example.com', 'unsubscribed': False, 'segments': [{'id': 'seg123'}]}, calls[-1])
     s, b = post('/confirm', {'t': link.group(1)})
     ok('a used link is refused', s == 400 and 'expired' in b)
     ok('confirmed addresses are not kept here', 'reader@example.com' not in open(os.path.join(state, 'pending.json')).read())
