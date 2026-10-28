@@ -54,7 +54,7 @@ def fresh_form():
 try:
     s, b, hd = get('/')
     ok('the sign-up page loads, with no scripts allowed', s == 200 and 'Get new projects by email' in b and "default-src 'none'" in hd.get('Content-Security-Policy', ''))
-    ok('it says how often and what for', 'About once a month' in b and 'never shared' in b)
+    ok('it says how often and what for', 'Roughly once a month' in b and 'Never shared or sold' in b)
     f = fresh_form()
     post('/', dict(f, email='fast@example.com'))
     ok('a form sent faster than a person can type sends nothing', not calls, calls)

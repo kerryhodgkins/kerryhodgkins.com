@@ -108,7 +108,7 @@ def send_confirm(email, tok):
     link = f'{PUBLIC}/confirm?t={tok}'
     text = ("Someone (hopefully you) asked to get updates from kerryhodgkins.com by email.\n\n"
             f"To confirm, open:\n\n  {link}\n\n"
-            "That's about one email a month: what I shipped and what's next. Nothing else, and your address is never shared.\n"
+            "That's roughly one email a month: what I shipped, what I’m building, and anything worth sharing. Your address is never shared or sold.\n"
             "The link works once and expires in 48 hours. If this wasn't you, ignore this email and nothing happens.\n\n"
             "Kerry Hodgkins\nhttps://kerryhodgkins.com")
     body = text.replace('&', '&amp;').replace('<', '&lt;').replace('\n', '<br>').replace(link, f'<a href="{h(link)}">{h(link)}</a>')
@@ -149,7 +149,7 @@ def form(err='', value=''):
     ts = str(int(now())); sig = hmac.new(secret().encode(), ts.encode(), 'sha256').hexdigest()[:32]
     st = f'<p class="status bad" role="alert">{h(err)}</p>' if err else ''
     return page('Get new projects by email', f"""
-<p>About once a month: what I shipped and what's next. Nothing else, and your address is never shared or sold.</p>
+<p>Roughly once a month: what I shipped, what I’m building, and anything worth sharing. Never shared or sold.</p>
 <form method="post" action="/">
 <label for="e">Your email</label>
 <input id="e" type="email" name="email" required autocomplete="email" maxlength="254" value="{h(value)}">
