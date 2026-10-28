@@ -47,7 +47,8 @@ if [ ! -f "$ETC/secrets.env" ]; then
   chmod 600 "$ETC/secrets.env"; unset KEY
   echo "Saved $ETC/secrets.env"
 fi
-set -a; . "$ETC/secrets.env"; set +a
+getv() { sed -n "s/^$1=//p" "$ETC/secrets.env" | head -n1; }   # read values without running the file as a script
+KW_NTFY_TOPIC=$(getv KW_NTFY_TOPIC); KW_PAGE_TOKEN=$(getv KW_PAGE_TOKEN); KW_PAGE_URL=$(getv KW_PAGE_URL)
 
 # 3. the watcher: its own user, can only write its own state folder, runs every minute
 id khwatch >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin khwatch
