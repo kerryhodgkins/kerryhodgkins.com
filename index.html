@@ -42,7 +42,7 @@ nav ul a:hover{color:var(--ink)}
 .hero{background:var(--band);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:32px 32px;border-bottom:1px solid var(--rule)}
 .hero .wrap{padding-top:4.5rem;padding-bottom:4.5rem}
 .hero h1{font-size:clamp(2.4rem,6vw,3.6rem);font-weight:800;line-height:1.05;letter-spacing:-.015em;max-width:15ch}
-/* redacted words that declassify one by one (same effect as styzza.com; pure CSS) */
+/* redacted words that declassify one by one (pure CSS) */
 .redact{position:relative;display:inline-block;overflow:hidden}
 .redact::after{content:"";position:absolute;inset:0;background:var(--ink);transform-origin:left center;animation:declassify .7s cubic-bezier(.77,0,.18,1) var(--d,0s) forwards}
 @keyframes declassify{0%,45%{transform:scaleX(1)}100%{transform:scaleX(0)}}
@@ -104,9 +104,9 @@ footer a{color:#fff}
 a.rss{display:inline-block;margin-top:.5rem;font:600 1rem Inter,sans-serif;padding:.7rem 1.15rem;border-radius:4px;background:#fff;color:#0B1E33;text-decoration:none}
 a.rss:hover{background:#DCE8F3}
 a.feed{margin-left:1rem;color:rgba(255,255,255,.8)}
-.foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem 2rem;margin-top:3rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,.15);font-size:.9rem}
-.foot ul{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;list-style:none;margin:0;padding:0}
-.day{font-weight:600}
+.support{margin-top:3rem;padding-top:2.5rem;border-top:1px solid rgba(255,255,255,.15)}
+a.kofi{display:inline-block;margin-top:.5rem;font:700 1.05rem Inter,sans-serif;padding:.8rem 1.4rem;border-radius:4px;background:#D63A3A;color:#fff;text-decoration:none}
+a.kofi:hover{background:#B52E2E}
 </style>
 </head>
 <body>
@@ -118,6 +118,7 @@ a.feed{margin-left:1rem;color:rgba(255,255,255,.8)}
       <li><a href="#principles">How I build</a></li>
       <li><a href="#built">Things I've built</a></li>
       <li><a href="#bench">On the bench</a></li>
+      <li><a href="#support">Support</a></li>
     </ul>
   </div>
 </nav>
@@ -277,11 +278,10 @@ a.feed{margin-left:1rem;color:rgba(255,255,255,.8)}
     <h2>Follow along</h2>
     <p>Roughly once a month: what I shipped, what I’m building, and anything worth sharing. Never shared or sold.</p>
     <p><a class="rss" href="https://subscribe.kerryhodgkins.com/">Get new projects by email</a> <a class="feed" href="/feed.xml">or use RSS</a></p>
-    <div class="foot">
-      <ul>
-        <li><a href="https://ko-fi.com/kerryhodgkins">Ko-fi</a></li>
-      </ul>
-      <p class="day" style="margin:0">Day job: <a href="https://styzza.com/">Styzza Security &amp; Privacy</a></p>
+    <div class="support" id="support">
+      <h2>Support my work</h2>
+      <p>No ads, no investors, no paid placement. Building these is my work, and your support keeps it going.</p>
+      <p><a class="kofi" href="https://ko-fi.com/kerryhodgkins">Support me on Ko-fi</a></p>
     </div>
     <p style="font-size:.85rem;color:rgba(255,255,255,.6);margin-top:1.25rem">© 2026 Kerry Hodgkins. No ads, no trackers. Ever.</p>
   </div>
