@@ -104,7 +104,25 @@ def c_heartbeat(url, max_age=300):
     return True, (f'reporting; {len(bad)} red there: ' + ', '.join(bad[:3])) if bad else 'reporting, all green there'
 
 
+def c_journal(unit, pattern, max_age=360):
+    """Something should show up in a service's log regularly, e.g. Synchronet's DOVE-Net (QNET) calls."""
+    def last(since):
+        r = subprocess.run(['journalctl', '-u', unit, '--since', since, '--grep', pattern, '-n', '1', '-o', 'short-unix',
+                            '--no-pager', '-q'], capture_output=True, text=True, timeout=20)
+        line = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ''
+        try:
+            return float(line.split()[0]) if line else None
+        except ValueError:
+            return None
+    t = last(f'-{int(max_age)} min')
+    if t:
+        return True, f'last seen {ago(t)}'
+    t = last('-14 days')
+    return False, (f'last seen {ago(t)} (limit {int(max_age) // 60} h)' if t else 'not seen in 14 days (or no access to the log)')
+
+
 TYPES = {'unit': lambda c: c_unit(c['unit']),
+         'journal': lambda c: c_journal(c['unit'], c['pattern'], c.get('max_age', 360)),
          'tcp': lambda c: c_tcp(c['target']),
          'http': lambda c: c_http(c['url'], c.get('contains', '')),
          'cert': lambda c: c_cert(c['host'], c.get('days', 14)),
@@ -354,6 +372,7 @@ TEMPLATES = {
   ('Synchronet BBS', 'Haunted Node', 'unit', 'unit=sbbs'),
   ('Synchronet telnet (23)', 'Haunted Node', 'tcp', 'target=127.0.0.1:23'),
   ('Synchronet SSH (2222)', 'Haunted Node', 'tcp', 'target=127.0.0.1:2222'),
+  ('DOVE-Net call to VERT', 'Haunted Node', 'journal', 'unit=sbbs\npattern=QNET.*VERT\nmax_age=360'),
   ('Disk', 'Server', 'disk', 'path=/\nmin_free=15'),
   ('Memory', 'Server', 'memory', 'min_free=10'),
   ('Firewall (ufw)', 'Server', 'unit', 'unit=ufw'),
@@ -381,7 +400,8 @@ def init(kind, status_json=''):
     unit_of = lambda u: u if '.' in u.split('@')[-1] else u + '.service'
     out = [f'# kh-watch checks for {t["name"]}. Edit freely; each [check ...] is one line on the dashboard.',
            '# Types: unit (systemd), tcp (host:port answers), http (url loads; optional contains=), cert (days left),',
-           '#        disk (min_free %), memory (min_free %), heartbeat (another watcher\'s status.json is fresh)', '',
+           '#        disk (min_free %), memory (min_free %), heartbeat (another watcher\'s status.json is fresh),',
+           '#        journal (a log line matching pattern= appeared in the last max_age minutes)', '',
            '[watch]', f'name = {t["name"]}', '']
     skipped = []
     for name, group, typ, args in t['checks']:
@@ -399,6 +419,8 @@ def init(kind, status_json=''):
             if want not in have:
                 skipped.append(name); continue
             kv['unit'] = want
+        if typ == 'journal' and unit_of(kv['unit']) not in have:
+            skipped.append(name); continue
         if typ == 'heartbeat':
             if not status_json:
                 skipped.append(name + ' (no Revenant status link given)'); continue

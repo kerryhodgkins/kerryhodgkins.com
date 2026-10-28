@@ -161,6 +161,29 @@ for kind in ('revenant', 'haunted'):
 ok('haunted init points its heartbeat at Revenant\'s status.json', 'url = https://status.example/tok/status.json' in kw('init', 'haunted', 'https://status.example/tok/status.json').stdout)
 ok('nothing printed anywhere contains the Resend key', all('re_secret' not in (kw(c).stdout + kw(c).stderr) for c in ('show',)))
 
+# journal check: a fake journalctl that "saw" a QNET call N minutes ago
+fake = tempfile.mkdtemp()
+open(os.path.join(fake, 'journalctl'), 'w').write('''#!/bin/sh
+# args: -u UNIT --since SINCE --grep PAT ...; LAST_MIN = minutes since the last matching line
+since="$4"; mins=${since#-}; mins=${mins% min}
+now=$(date +%s); t=$((now - LAST_MIN*60))
+case "$since" in -14\ days) echo "$t.0 host synchronet[1]: evnt QNET Imported 3 from VERT";; *) [ "$LAST_MIN" -le "$mins" ] && echo "$t.0 host synchronet[1]: evnt QNET Imported 3 from VERT";; esac
+exit 0
+''')
+os.chmod(os.path.join(fake, 'journalctl'), 0o755)
+write_conf("""
+[check DOVE-Net call to VERT]
+group = Haunted Node
+type = journal
+unit = sbbs
+pattern = QNET.*VERT
+max_age = 360
+""")
+r = kw('show', env=dict(ENV, PATH=fake + ':' + os.environ['PATH'], LAST_MIN='45'))
+ok('DOVE-Net called 45 min ago: green, with when', 'UP    DOVE-Net call to VERT' in r.stdout.replace('● ', '') and 'last seen 45 min ago' in r.stdout, r.stdout + r.stderr)
+r = kw('show', env=dict(ENV, PATH=fake + ':' + os.environ['PATH'], LAST_MIN='480'))
+ok('no call for 8 hours (limit 6): red, saying when it last called', 'DOWN  DOVE-Net call to VERT' in r.stdout.replace('● ', '') and 'last seen 8 h ago (limit 6 h)' in r.stdout, r.stdout + r.stderr)
+
 srv.shutdown()
 print(f'{sum(res)}/{len(res)} passed')
 sys.exit(0 if all(res) else 1)

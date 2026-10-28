@@ -52,6 +52,7 @@ KW_NTFY_TOPIC=$(getv KW_NTFY_TOPIC); KW_PAGE_TOKEN=$(getv KW_PAGE_TOKEN); KW_PAG
 
 # 3. the watcher: its own user, can only write its own state folder, runs every minute
 id khwatch >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin khwatch
+usermod -aG systemd-journal khwatch   # read-only access to service logs, for 'journal' checks like the DOVE-Net call
 cat > /etc/systemd/system/kh-watch.service <<UNIT
 [Unit]
 Description=kh-watch: check everything, alert on changes
