@@ -332,7 +332,6 @@ TEMPLATES = {
   ('List monitor timer', 'NodeDial', 'unit', 'unit=nodedial-monitor.timer'),
   ('Sysop dashboard + add form', 'NodeDial', 'unit', 'unit=nodedial-sysop'),
   ('Web dialer bridges', 'NodeDial', 'unit', 'unit=nodedial-bridge@*'),
-  ('websockify', 'NodeDial', 'unit', 'unit=websockify'),
   ('Poker hub', 'Revenant Poker', 'unit', 'unit=poker-hub'),
   ('Poker hub port (7377)', 'Revenant Poker', 'tcp', 'target=127.0.0.1:7377'),
   ('Newsletter sign-up', 'kerryhodgkins.com', 'http', 'url=https://subscribe.kerryhodgkins.com/healthz'),
