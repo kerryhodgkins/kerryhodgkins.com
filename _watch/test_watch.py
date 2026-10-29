@@ -184,6 +184,13 @@ ok('DOVE-Net called 45 min ago: green, with when', 'UP    DOVE-Net call to VERT'
 r = kw('show', env=dict(ENV, PATH=fake + ':' + os.environ['PATH'], LAST_MIN='480'))
 ok('no call for 8 hours (limit 6): red, saying when it last called', 'DOWN  DOVE-Net call to VERT' in r.stdout.replace('● ', '') and 'last seen 8 h ago (limit 6 h)' in r.stdout, r.stdout + r.stderr)
 
+write_conf("\n[check Disk]\ngroup = Server\ntype = disk\nmin_free = 0\n")
+r = kw('show')
+ok('a check listed twice does not crash the dashboard', r.returncode in (0, 1) and 'Traceback' not in r.stderr and r.stdout.count('Disk') == 1, r.stdout + r.stderr)
+open(conf, 'a').write('\nthis line is broken\n')
+r = kw('show')
+ok('a broken line gives a one-line message, not a traceback', 'Problem in' in r.stderr and 'Traceback' not in r.stderr, r.stderr)
+
 srv.shutdown()
 print(f'{sum(res)}/{len(res)} passed')
 sys.exit(0 if all(res) else 1)
