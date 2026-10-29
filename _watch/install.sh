@@ -62,6 +62,7 @@ if [ "$MODE" = update ]; then
     sed -i -e 's/^OnBootSec=.*$//' -e 's/^OnUnitActiveSec=.*$/OnCalendar=*-*-* *:*:00/' /etc/systemd/system/kh-watch.timer
     systemctl daemon-reload; systemctl restart kh-watch.timer
   fi
+  python3 "$LIB/watch.py" tune || true
   TOK=$(getv KW_PAGE_TOKEN || true)
   if [ -n "$TOK" ] && [ -f "$NGX" ]; then ensure_public; write_https "$TOK"; echo "Public status page: https://$HOST/"; fi
   systemctl start kh-watch.service || true; echo "Updated. Type: dashboard"; exit 0
