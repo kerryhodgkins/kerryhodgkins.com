@@ -254,14 +254,32 @@ def write_atomic(p, text):
 def run():
     name, checks = load_conf()
     now = time.time()
-    res = run_checks(checks)
     path = os.path.join(STATE_DIR, 'state.json')
     old = read_json(path).get('checks', {})
+
+    def due(c):   # every = N: only check every N minutes (e.g. another server's BBS ports, to keep its logs quiet)
+        try:
+            every = max(1, int(c.get('every', 1)))
+        except ValueError:
+            every = 1
+        last = old.get(c['name'], {}).get('checked')
+        return every == 1 or not last or now - last >= every * 60 - 10
+    todo = [c for c in checks if due(c)]
+    fresh = {r['name']: r for r in run_checks(todo)}
+    res = []
+    for c in checks:
+        if c['name'] in fresh:
+            res.append(fresh[c['name']])
+        else:
+            o = old[c['name']]
+            res.append({'name': c['name'], 'group': c['group'], 'ok': o['ok'], 'detail': o['detail'], 'skipped': True})
     remind = float(os.environ.get('KW_REMIND_HOURS', '6')) * 3600
     new, down, up, still = {}, [], [], []
     for r in res:
         o = old.get(r['name'], {})
-        s = {'ok': r['ok'], 'detail': r['detail'], 'group': r['group'],
+        if r.get('skipped'):
+            new[r['name']] = o; continue
+        s = {'ok': r['ok'], 'detail': r['detail'], 'group': r['group'], 'checked': now,
              'fails': 0 if r['ok'] else o.get('fails', 0) + 1,
              'alerted': o.get('alerted', False), 'down_since': None if r['ok'] else (o.get('down_since') or now),
              'reminded': o.get('reminded')}
@@ -437,6 +455,39 @@ PUBLIC_DEFAULT = [
 ]
 
 
+SLOW_CHECKS = ['Haunted Node telnet (23)', 'Haunted Node SSH (2222)', 'Revenant telnet (23)']
+
+
+def tune():
+    """Add 'every = 5' to the checks that knock on the other server's BBS ports, if not set already."""
+    try:
+        lines = open(CONF).read().split('\n')
+    except OSError as e:
+        sys.exit(str(e))
+    out, changed, cur, has = [], [], None, False
+    def close():
+        if cur in SLOW_CHECKS and not has:
+            i = len(out)
+            while i > 0 and not out[i - 1].strip():
+                i -= 1
+            out.insert(i, 'every = 5'); changed.append(cur)
+    for line in lines:
+        t = line.strip()
+        if t.startswith('['):
+            close()
+            cur = t[7:-1].strip() if t.lower().startswith('[check ') else None
+            has = False
+        elif cur and t.replace(' ', '').startswith('every='):
+            has = True
+        out.append(line)
+    close()
+    if changed:
+        with open(CONF, 'w') as f:
+            f.write('\n'.join(out))
+        print('Now checked every 5 minutes: ' + ', '.join(changed))
+    return 0
+
+
 def init_public():
     """Print a [public] section using only checks that exist in this server's config."""
     _, checks = load_conf()
@@ -474,8 +525,8 @@ TEMPLATES = {
   ('Sleepless Node telnet gateway', 'Sleepless Node', 'unit', 'unit=sn-telnet'),
   ('Sleepless Node telnet (666)', 'Sleepless Node', 'tcp', 'target=127.0.0.1:666'),
   ('sleeplessnode.com', 'Sleepless Node', 'http', 'url=https://sleeplessnode.com/'),
-  ('Haunted Node telnet (23)', 'Haunted Node (from here)', 'tcp', f'target={HAUNTED_IP}:23'),
-  ('Haunted Node SSH (2222)', 'Haunted Node (from here)', 'tcp', f'target={HAUNTED_IP}:2222'),
+  ('Haunted Node telnet (23)', 'Haunted Node (from here)', 'tcp', f'target={HAUNTED_IP}:23\nevery=5'),
+  ('Haunted Node SSH (2222)', 'Haunted Node (from here)', 'tcp', f'target={HAUNTED_IP}:2222\nevery=5'),
   ('Cert: revenantbbs.com', 'Certificates', 'cert', 'host=revenantbbs.com'),
   ('Cert: nodedial.com', 'Certificates', 'cert', 'host=nodedial.com'),
   ('Cert: subscribe.kerryhodgkins.com', 'Certificates', 'cert', 'host=subscribe.kerryhodgkins.com'),
@@ -494,7 +545,7 @@ TEMPLATES = {
   ('Memory', 'Server', 'memory', 'min_free=10'),
   ('Firewall (ufw)', 'Server', 'unit', 'unit=ufw'),
   ('Revenant watcher', 'Revenant (from here)', 'heartbeat', 'url=REVENANT_STATUS_JSON\nmax_age=300'),
-  ('Revenant telnet (23)', 'Revenant (from here)', 'tcp', f'target={REVENANT_IP}:23'),
+  ('Revenant telnet (23)', 'Revenant (from here)', 'tcp', f'target={REVENANT_IP}:23\nevery=5'),
   ('revenantbbs.com', 'Revenant (from here)', 'http', 'url=https://revenantbbs.com/'),
   ('nodedial.com', 'Revenant (from here)', 'http', 'url=https://nodedial.com/'),
  ]},
@@ -518,7 +569,8 @@ def init(kind, status_json=''):
     out = [f'# kh-watch checks for {t["name"]}. Edit freely; each [check ...] is one line on the dashboard.',
            '# Types: unit (systemd), tcp (host:port answers), http (url loads; optional contains=), cert (days left),',
            '#        disk (min_free %), memory (min_free %), heartbeat (another watcher\'s status.json is fresh),',
-           '#        journal (a log line matching pattern= appeared in the last max_age minutes)', '',
+           '#        journal (a log line matching pattern= appeared in the last max_age minutes)',
+           '# Any check can have every = N to run only every N minutes (default: every minute)', '',
            '[watch]', f'name = {t["name"]}', '']
     skipped = []
     for name, group, typ, args in t['checks']:
@@ -573,6 +625,8 @@ def main(argv):
         sent = send(f'{name}: test alert', 'This is a test from kh-watch. If you can read this, alerts work.')
         print('Sent to: ' + (', '.join(sent) or 'nothing (no channels configured or all failed)'))
         return 0 if sent else 1
+    if cmd == 'tune':
+        return tune()
     if cmd == 'init-public':
         return init_public()
     if cmd == 'init':

@@ -218,6 +218,57 @@ ok('the private page is still written next to it', os.path.exists(os.path.join(s
 r = kw('init-public', env=envp)
 ok('init-public keeps only checks this server has', '[public]' in r.stdout and 'Revenant Poker = Poker port' not in r.stdout and 'NodeDial' not in r.stdout, r.stdout)
 
+# every = N: a check that only runs every N minutes keeps its last result in between
+st3 = tempfile.mkdtemp(); envq = dict(ENV, KW_STATE=st3, KW_SECRETS='/nonexistent')
+sl = socket.socket(); sl.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); sl.bind(('127.0.0.1', 0)); sl.listen(); SLOW = sl.getsockname()[1]
+open(conf, 'w').write(f"""[watch]
+name = T
+[check Haunted Node telnet (23)]
+group = Peer
+type = tcp
+target = 127.0.0.1:{SLOW}
+every = 5
+[check Fast]
+group = Peer
+type = tcp
+target = 127.0.0.1:{SLOW}
+""")
+kw('run', env=envq); sl.close(); kw('run', env=envq)
+stt = json.load(open(os.path.join(st3, 'state.json')))['checks']
+ok('an every-5 check is not re-run a minute later (keeps its last result)', stt['Haunted Node telnet (23)']['ok'] is True and stt['Fast']['ok'] is False, stt)
+d = json.load(open(os.path.join(st3, 'state.json'))); d['checks']['Haunted Node telnet (23)']['checked'] -= 301; json.dump(d, open(os.path.join(st3, 'state.json'), 'w'))
+kw('run', env=envq)
+stt = json.load(open(os.path.join(st3, 'state.json')))['checks']
+ok('...and runs again once 5 minutes have passed', stt['Haunted Node telnet (23)']['ok'] is False, stt)
+
+# tune: adds every = 5 to the cross-server checks in an existing config, once
+open(conf, 'w').write("""[watch]
+name = T
+
+[check Haunted Node telnet (23)]
+group = P
+type = tcp
+target = 1.2.3.4:23
+
+[check Revenant telnet (23)]
+group = P
+type = tcp
+target = 1.2.3.4:23
+every = 2
+
+[check Other]
+group = P
+type = disk
+""")
+r = kw('tune'); t1 = open(conf).read(); kw('tune'); t2 = open(conf).read()
+ok('tune adds every = 5 only where missing, and only to the cross-server checks', 'Haunted Node telnet (23)' in r.stdout and t1.count('every = 5') == 1
+   and 'every = 2' in t1 and t1 == t2 and t1.index('every = 5') < t1.index('[check Revenant'), t1)
+import configparser as _cp
+c2 = _cp.ConfigParser(interpolation=None); c2.read_string(t1)
+ok('the tuned config still parses', c2['check Haunted Node telnet (23)']['every'] == '5' and c2['check Other']['type'] == 'disk')
+r = kw('init', 'revenant', 'x')
+ok('new Revenant configs check Haunted Node\'s ports every 5 minutes', 'every = 5' in r.stdout)
+
 srv.shutdown()
 print(f'{sum(res)}/{len(res)} passed')
 sys.exit(0 if all(res) else 1)
