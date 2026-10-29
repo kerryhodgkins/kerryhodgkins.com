@@ -2,7 +2,8 @@
 # Installs kh-watch (green/red checks, alerts, status page) on this server.
 #   sudo bash install.sh revenant    Revenant: checks + alerts + the private status page at status.kerryhodgkins.com
 #   sudo bash install.sh haunted     Haunted Node: checks + alerts, and it watches Revenant's watcher
-#   sudo bash install.sh update      after a change: copies the new watch.py (keeps your config and secrets)
+#   sudo bash install.sh update      after a change: copies the new watch.py (keeps your config and secrets);
+#                                    on Revenant it also adds the public status page if it is not there yet
 # Then type: dashboard
 set -euo pipefail
 [ "$(id -u)" = 0 ] || { echo "run with sudo" >&2; exit 1; }
@@ -15,12 +16,54 @@ HOST=status.kerryhodgkins.com
 install -d -m 755 "$LIB" "$ETC"
 install -m 755 "$HERE/watch.py" "$LIB/watch.py"
 for n in kh-watch dashboard Dashboard; do ln -sf "$LIB/watch.py" "/usr/local/bin/$n"; done
+NGX=/etc/nginx/sites-available/kh-watch; WEB=/var/www/kh-watch-acme
+getv() { [ -f "$ETC/secrets.env" ] && sed -n "s/^$1=//p" "$ETC/secrets.env" | head -n1; }   # read values without running the file as a script
+
+ensure_public() {   # Revenant: what visitors see at https://$HOST/ (service names only, green/red)
+  grep -qi '^\[public\]' "$ETC/watch.conf" 2>/dev/null && return 0
+  python3 "$LIB/watch.py" init-public >> "$ETC/watch.conf" && echo "Added the [public] section to $ETC/watch.conf"
+}
+
+write_https() {   # $1 = private page token. Public page at /, private page at /<token>/
+  install -d -m 755 /etc/nginx/snippets
+  cat > /etc/nginx/snippets/kh-watch-headers.conf <<HDR
+add_header Strict-Transport-Security "max-age=31536000" always;
+add_header Cache-Control "no-store" always;
+add_header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'" always;
+add_header X-Content-Type-Options "nosniff" always;
+HDR
+  cat > "$NGX" <<NGINX
+server { listen 80; server_name $HOST;
+    location /.well-known/acme-challenge/ { root $WEB; }
+    location / { return 301 https://$HOST\$request_uri; } }
+server {
+    listen 443 ssl;
+    server_name $HOST;
+    ssl_certificate     /etc/letsencrypt/live/$HOST/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$HOST/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    server_tokens off;
+    access_log off;
+    include snippets/kh-watch-headers.conf;
+    # the private page: everything, behind an unguessable link
+    location /$1/ { alias /var/lib/kh-watch/www/$1/; index index.html; include snippets/kh-watch-headers.conf; add_header X-Robots-Tag "noindex, nofollow" always; }
+    # the public page: service names only
+    location = / { root /var/lib/kh-watch/www/public; try_files /index.html =404; }
+    location = /badge.svg { root /var/lib/kh-watch/www/public; include snippets/kh-watch-headers.conf; add_header Access-Control-Allow-Origin "*" always; }
+    location = /status.json { root /var/lib/kh-watch/www/public; include snippets/kh-watch-headers.conf; add_header Access-Control-Allow-Origin "*" always; }
+    location / { return 404; }
+}
+NGINX
+  nginx -t && systemctl reload nginx
+}
 
 if [ "$MODE" = update ]; then
   if [ -f /etc/systemd/system/kh-watch.timer ] && grep -q OnUnitActiveSec /etc/systemd/system/kh-watch.timer; then
     sed -i -e 's/^OnBootSec=.*$//' -e 's/^OnUnitActiveSec=.*$/OnCalendar=*-*-* *:*:00/' /etc/systemd/system/kh-watch.timer
     systemctl daemon-reload; systemctl restart kh-watch.timer
   fi
+  TOK=$(getv KW_PAGE_TOKEN || true)
+  if [ -n "$TOK" ] && [ -f "$NGX" ]; then ensure_public; write_https "$TOK"; echo "Public status page: https://$HOST/"; fi
   systemctl start kh-watch.service || true; echo "Updated. Type: dashboard"; exit 0
 fi
 case "$MODE" in revenant|haunted) ;; *) echo "usage: sudo bash install.sh revenant|haunted|update" >&2; exit 2;; esac
@@ -53,7 +96,6 @@ if [ ! -f "$ETC/secrets.env" ]; then
   chmod 600 "$ETC/secrets.env"; unset KEY
   echo "Saved $ETC/secrets.env"
 fi
-getv() { sed -n "s/^$1=//p" "$ETC/secrets.env" | head -n1; }   # read values without running the file as a script
 KW_NTFY_TOPIC=$(getv KW_NTFY_TOPIC); KW_PAGE_TOKEN=$(getv KW_PAGE_TOKEN); KW_PAGE_URL=$(getv KW_PAGE_URL)
 
 # 3. the watcher: its own user, can only write its own state folder, runs every minute
@@ -94,37 +136,18 @@ systemctl daemon-reload
 systemctl enable --now kh-watch.timer >/dev/null
 systemctl start kh-watch.service || true
 
-# 4. Revenant only: the private status page (needs DNS: status -> this server)
+# 4. Revenant only: the status pages (needs DNS: status -> this server)
 if [ "$MODE" = revenant ]; then
-  WEB=/var/www/kh-watch-acme; NGX=/etc/nginx/sites-available/kh-watch
   install -d -m 755 "$WEB"
-  printf 'server { listen 80; server_name %s;\n    location /.well-known/acme-challenge/ { root %s; }\n    location / { return 301 https://%s$request_uri; } }\n' "$HOST" "$WEB" "$HOST" > "$NGX"
-  ln -sf "$NGX" /etc/nginx/sites-enabled/kh-watch
-  nginx -t && systemctl reload nginx
   if [ ! -f "/etc/letsencrypt/live/$HOST/fullchain.pem" ]; then
+    printf 'server { listen 80; server_name %s;\n    location /.well-known/acme-challenge/ { root %s; }\n    location / { return 301 https://%s$request_uri; } }\n' "$HOST" "$WEB" "$HOST" > "$NGX"
+    ln -sf "$NGX" /etc/nginx/sites-enabled/kh-watch
+    nginx -t && systemctl reload nginx
     certbot certonly --webroot -w "$WEB" -d "$HOST" --cert-name "$HOST" --non-interactive --agree-tos --register-unsafely-without-email
   fi
-  cat > "$NGX" <<NGINX
-server { listen 80; server_name $HOST;
-    location /.well-known/acme-challenge/ { root $WEB; }
-    location / { return 301 https://$HOST\$request_uri; } }
-server {
-    listen 443 ssl;
-    server_name $HOST;
-    ssl_certificate     /etc/letsencrypt/live/$HOST/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$HOST/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    server_tokens off;
-    access_log off;
-    add_header X-Robots-Tag "noindex, nofollow" always;
-    add_header Strict-Transport-Security "max-age=31536000" always;
-    add_header Cache-Control "no-store" always;
-    add_header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'" always;
-    location /$KW_PAGE_TOKEN/ { alias /var/lib/kh-watch/www/$KW_PAGE_TOKEN/; index index.html; }
-    location / { return 404; }
-}
-NGINX
-  nginx -t && systemctl reload nginx
+  ln -sf "$NGX" /etc/nginx/sites-enabled/kh-watch
+  ensure_public
+  write_https "$KW_PAGE_TOKEN"
 fi
 
 sleep 2
@@ -134,6 +157,6 @@ echo "== Installed. Your dashboard:"; echo
 echo
 echo "== Phone alerts: install the free ntfy app, tap +, and subscribe to this topic (keep it private):"
 echo "   $KW_NTFY_TOPIC"
-[ "$MODE" = revenant ] && { echo; echo "== Private status page (bookmark it; the link is the password):"; echo "   $KW_PAGE_URL"; echo "   Haunted Node's installer asks for: ${KW_PAGE_URL}status.json"; }
+[ "$MODE" = revenant ] && { echo; echo "== Private status page (bookmark it; the link is the password):"; echo "   $KW_PAGE_URL"; echo "   Haunted Node's installer asks for: ${KW_PAGE_URL}status.json"; echo; echo "== Public status page: https://$HOST/"; }
 echo
 echo "Then run:  sudo kh-watch test-alert   (as root, so it can read the alert settings)"
