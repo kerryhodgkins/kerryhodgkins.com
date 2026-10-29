@@ -156,6 +156,25 @@ def load_conf():
     return name, checks
 
 
+def load_public():
+    """[public] maps what visitors see to the checks behind it:  Revenant BBS = Mystic telnet (23), revenantbbs.com"""
+    out, on = [], False
+    try:
+        lines = open(CONF).read().splitlines()
+    except OSError:
+        return out
+    for line in lines:
+        t = line.strip()
+        if t.startswith('['):
+            on = t.lower() == '[public]'; continue
+        if on and '=' in t and not t.startswith(('#', ';')):
+            k, v = t.split('=', 1)
+            names = [n.strip() for n in v.split(',') if n.strip()]
+            if k.strip() and names:
+                out.append((k.strip(), names))
+    return out
+
+
 def run_checks(checks):
     def one(c):
         if c['type'] == 'bad':
@@ -259,6 +278,9 @@ def run():
     token = os.environ.get('KW_PAGE_TOKEN', '')
     if token:
         page(name, res, new, now, token)
+        pub = load_public()
+        if pub:
+            public_page(pub, new, now)
     return 0
 
 
@@ -334,6 +356,97 @@ def page(name, res, state, now, token):
                  cls='bad' if bad else 'ok', summary=summary, groups=''.join(groups)))
     write_atomic(os.path.join(out, 'status.json'), json.dumps({'name': name, 'time': now, 'checks': [
         {'name': r['name'], 'ok': r['ok']} for r in res]}))
+
+
+PUBLIC_PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="refresh" content="60"><title>{title}</title><meta name="description" content="Live status of the boards and services built by Kerry Hodgkins.">
+<style>
+:root{{--bg:#F4F6F9;--card:#fff;--text:#0B1E33;--muted:#5B6B7E;--line:#E3E8EF;--up:#1A7F37;--down:#CF222E}}
+@media (prefers-color-scheme:dark){{:root{{--bg:#0B1E33;--card:#122A44;--text:#E8EEF5;--muted:#9FB3C8;--line:rgba(255,255,255,.08);--up:#3FB950;--down:#F85149}}}}
+*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}}
+main{{max-width:640px;margin:0 auto;padding:32px 16px 48px}}a{{color:inherit}}.top{{font-size:.9rem;color:var(--muted)}}
+h1{{font-size:1.5rem;margin:6px 0 2px}}.sum{{display:flex;align-items:center;gap:10px;font-size:1.25rem;font-weight:700;margin:22px 0;padding:16px 18px;border-radius:10px;background:var(--card);border:1px solid var(--line)}}
+.sum.ok{{color:var(--up)}}.sum.bad{{color:var(--down)}}
+ul{{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:10px}}
+li{{display:flex;flex-wrap:wrap;gap:2px 12px;align-items:center;padding:12px 18px;border-top:1px solid var(--line)}}li:first-child{{border-top:0}}
+.dot{{width:11px;height:11px;border-radius:50%;flex:none}}.up .dot{{background:var(--up)}}.down .dot{{background:var(--down)}}
+.n{{flex:1 1 10rem;font-weight:600}}.s{{margin-left:auto;font-size:.9rem;font-weight:600}}.up .s{{color:var(--up)}}.down .s{{color:var(--down)}}
+footer{{color:var(--muted);font-size:.85rem;margin-top:24px}}
+</style></head><body><main><div class="top"><a href="https://kerryhodgkins.com/">kerryhodgkins.com</a></div><h1>Service status</h1>
+<div class="top">Checked every minute · updated {when}</div>
+<div class="sum {cls}"><span class="dot" style="background:currentColor"></span>{summary}</div><ul>{items}</ul>
+<footer>A service turns red after two failed checks in a row, about two minutes. No cookies, no trackers.</footer></main></body></html>
+"""
+
+
+def public_state(pub, state):
+    """A service is down when any of its checks has failed twice in a row (the same rule as the alerts)."""
+    out = []
+    for label, names in pub:
+        st = [state[n] for n in names if n in state]
+        if not st:
+            continue
+        bad = [s for s in st if not s['ok'] and s['fails'] >= FAILS_TO_ALERT]
+        since = min((s['down_since'] for s in bad if s.get('down_since')), default=None)
+        out.append({'name': label, 'ok': not bad, 'since': since})
+    return out
+
+
+def badge(services):
+    bad = sum(1 for s in services if not s['ok'])
+    text = 'All services up' if not bad else (f'{bad} service down' if bad == 1 else f'{bad} services down')
+    color = '#3FB950' if not bad else '#F85149'
+    w = 34 + int(len(text) * 7.4)
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="28" viewBox="0 0 {w} 28" role="img" aria-label="{text}">'
+            f'<title>{text}</title><rect x=".5" y=".5" width="{w - 1}" height="27" rx="6" fill="#122A44" stroke="#2A4563"/>'
+            f'<circle cx="15" cy="14" r="5" fill="{color}"/><text x="27" y="18.5" fill="#E8EEF5" '
+            f'font-family="Inter,system-ui,-apple-system,Segoe UI,sans-serif" font-size="13" font-weight="600">{text}</text></svg>')
+
+
+def public_page(pub, state, now):
+    services = public_state(pub, state)
+    bad = [s for s in services if not s['ok']]
+    items = ''.join(f'<li class="{"up" if s["ok"] else "down"}"><span class="dot"></span><span class="n">{html.escape(s["name"])}</span>'
+                    f'<span class="s">{"Up" if s["ok"] else "Down" + (" for " + dur(s["since"]) if s["since"] else "")}</span></li>' for s in services)
+    summary = 'All services are up' if not bad else (f'{len(bad)} service is down' if len(bad) == 1 else f'{len(bad)} services are down')
+    when = datetime.datetime.fromtimestamp(now, datetime.timezone.utc).astimezone(PUBLIC_TZ).strftime('%b %d, %I:%M %p %Z').replace(' 0', ' ')
+    out = os.path.join(STATE_DIR, 'www', 'public')
+    write_atomic(os.path.join(out, 'index.html'), PUBLIC_PAGE.format(title=('All services up' if not bad else summary) + ' · Kerry Hodgkins',
+                 when=when, cls='bad' if bad else 'ok', summary=summary, items=items))
+    write_atomic(os.path.join(out, 'status.json'), json.dumps({'time': int(now), 'services': [
+        {'name': s['name'], 'up': s['ok']} for s in services]}))
+    write_atomic(os.path.join(out, 'badge.svg'), badge(services))
+
+
+try:
+    from zoneinfo import ZoneInfo
+    PUBLIC_TZ = ZoneInfo(os.environ.get('KW_PUBLIC_TZ', 'America/Chicago'))
+except Exception:
+    PUBLIC_TZ = datetime.timezone.utc
+
+
+PUBLIC_DEFAULT = [
+    ('Revenant BBS', ['Mystic telnet (23)', 'Mystic SSH (2222)', 'revenantbbs.com']),
+    ('Revenant BBS web dialer', ['Mystic web dialer port (2323)', 'Web dialer bridge: revenant']),
+    ('Haunted Node', ['Haunted Node telnet (23)', 'Haunted Node SSH (2222)']),
+    ('Haunted Node web dialer', ['Web dialer bridge: hauntednode']),
+    ('NodeDial BBS list', ['nodedial.com', 'Board list data']),
+    ('Revenant Poker', ['Poker hub', 'Poker hub port (7377)']),
+    ('Sleepless Node', ['sleeplessnode.com', 'Sleepless Node telnet (666)']),
+    ('Newsletter sign-up', ['Newsletter sign-up']),
+]
+
+
+def init_public():
+    """Print a [public] section using only checks that exist in this server's config."""
+    _, checks = load_conf()
+    have = {c['name'] for c in checks}
+    lines = ['', '# What visitors see at status.kerryhodgkins.com. Left: the public name. Right: the checks behind it (all must be up).', '[public]']
+    for label, names in PUBLIC_DEFAULT:
+        keep = [n for n in names if n in have]
+        if keep:
+            lines.append(f'{label} = {", ".join(keep)}')
+    print('\n'.join(lines))
 
 
 # ---------- init: starter configs ----------
@@ -460,6 +573,8 @@ def main(argv):
         sent = send(f'{name}: test alert', 'This is a test from kh-watch. If you can read this, alerts work.')
         print('Sent to: ' + (', '.join(sent) or 'nothing (no channels configured or all failed)'))
         return 0 if sent else 1
+    if cmd == 'init-public':
+        return init_public()
     if cmd == 'init':
         return init(argv[2] if len(argv) > 2 else '', argv[3] if len(argv) > 3 else '')
     print(__doc__); return 2

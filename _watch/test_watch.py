@@ -191,6 +191,33 @@ open(conf, 'a').write('\nthis line is broken\n')
 r = kw('show')
 ok('a broken line gives a one-line message, not a traceback', 'Problem in' in r.stderr and 'Traceback' not in r.stderr, r.stderr)
 
+# public status page: service names only, green/red, plus a badge
+st2 = tempfile.mkdtemp()
+write_conf("""
+[public]
+Revenant BBS = Board telnet, Site
+Revenant Poker = Poker port
+Ghost Service = Not A Check
+""")
+envp = dict(ENV, KW_STATE=st2, KW_SECRETS='/nonexistent', KW_PAGE_TOKEN='tok9')
+fixed = socket.socket(); fixed.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+kw('run', env=envp)
+pub = os.path.join(st2, 'www', 'public')
+pg = open(os.path.join(pub, 'index.html')).read()
+ok('public page: one failed check does not turn it red yet', 'All services are up' in pg and 'Revenant Poker' in pg, pg[-800:])
+kw('run', env=envp)
+pg = open(os.path.join(pub, 'index.html')).read(); bj = json.load(open(os.path.join(pub, 'status.json'))); svg = open(os.path.join(pub, 'badge.svg')).read()
+ok('after two failures the service is red for visitors', '1 service is down' in pg and 'class="down"><span class="dot"></span><span class="n">Revenant Poker' in pg, pg[-900:])
+ok('visitors see service names only: no ports, check names or server details', 'Poker port' not in pg and '127.0.0.1' not in pg and 'Board telnet' not in pg
+   and 'Test Box' not in pg and 'Disk' not in pg, pg)
+ok('a service with no matching checks is left off', 'Ghost Service' not in pg and len(bj['services']) == 2, bj)
+ok('status.json: names and up/down only', bj['services'] == [{'name': 'Revenant BBS', 'up': True}, {'name': 'Revenant Poker', 'up': False}], bj)
+ok('the badge says what is down, in an SVG with a text fallback', svg.startswith('<svg') and '1 service down' in svg and '<title>1 service down</title>' in svg and '#F85149' in svg, svg)
+ok('the public page links home and has no scripts', 'https://kerryhodgkins.com/' in pg and '<script' not in pg)
+ok('the private page is still written next to it', os.path.exists(os.path.join(st2, 'www', 'tok9', 'index.html')))
+r = kw('init-public', env=envp)
+ok('init-public keeps only checks this server has', '[public]' in r.stdout and 'Revenant Poker = Poker port' not in r.stdout and 'NodeDial' not in r.stdout, r.stdout)
+
 srv.shutdown()
 print(f'{sum(res)}/{len(res)} passed')
 sys.exit(0 if all(res) else 1)
