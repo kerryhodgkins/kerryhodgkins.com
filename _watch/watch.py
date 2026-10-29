@@ -138,8 +138,12 @@ def short(e):
 
 
 def load_conf():
-    cp = configparser.ConfigParser(interpolation=None)
-    if not cp.read(CONF):
+    cp = configparser.ConfigParser(interpolation=None, strict=False)   # a section listed twice: the later one wins
+    try:
+        found = cp.read(CONF)
+    except configparser.Error as e:
+        sys.exit(f'Problem in {CONF}: {str(e).splitlines()[0]}\nFix that line with: sudo nano {CONF}')
+    if not found:
         sys.exit(f'No config at {CONF}. Run: kh-watch init <revenant|haunted> > {CONF}')
     name = cp.get('watch', 'name', fallback=socket.gethostname())
     checks = []
