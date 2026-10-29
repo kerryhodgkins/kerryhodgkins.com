@@ -16,7 +16,13 @@ install -d -m 755 "$LIB" "$ETC"
 install -m 755 "$HERE/watch.py" "$LIB/watch.py"
 for n in kh-watch dashboard Dashboard; do ln -sf "$LIB/watch.py" "/usr/local/bin/$n"; done
 
-if [ "$MODE" = update ]; then systemctl start kh-watch.service || true; echo "Updated. Type: dashboard"; exit 0; fi
+if [ "$MODE" = update ]; then
+  if [ -f /etc/systemd/system/kh-watch.timer ] && grep -q OnUnitActiveSec /etc/systemd/system/kh-watch.timer; then
+    sed -i -e 's/^OnBootSec=.*$//' -e 's/^OnUnitActiveSec=.*$/OnCalendar=*-*-* *:*:00/' /etc/systemd/system/kh-watch.timer
+    systemctl daemon-reload; systemctl restart kh-watch.timer
+  fi
+  systemctl start kh-watch.service || true; echo "Updated. Type: dashboard"; exit 0
+fi
 case "$MODE" in revenant|haunted) ;; *) echo "usage: sudo bash install.sh revenant|haunted|update" >&2; exit 2;; esac
 
 # 1. the checks (no secrets in here, so 'dashboard' works for any user)
@@ -77,8 +83,8 @@ cat > /etc/systemd/system/kh-watch.timer <<UNIT
 Description=Run kh-watch every minute
 
 [Timer]
-OnBootSec=1min
-OnUnitActiveSec=1min
+# a plain clock schedule: fires every minute even if the last run failed
+OnCalendar=*-*-* *:*:00
 AccuracySec=5s
 
 [Install]
